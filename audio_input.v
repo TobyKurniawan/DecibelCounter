@@ -1,0 +1,323 @@
+
+module DE1_SoC_Audio_Example (
+	// Inputs
+	CLOCK_50,
+	KEY,
+
+	AUD_ADCDAT,
+
+	// Bidirectionals
+	AUD_BCLK,
+	AUD_ADCLRCK,
+	AUD_DACLRCK,
+
+	FPGA_I2C_SDAT,
+
+	// Outputs
+	AUD_XCK,
+	AUD_DACDAT,
+
+	FPGA_I2C_SCLK,
+	SW,
+	finalCountOut,
+	outEnableTop
+);
+
+/*****************************************************************************
+ *                           Parameter Declarations                          *
+ *****************************************************************************/
+
+
+/*****************************************************************************
+ *                             Port Declarations                             *
+ *****************************************************************************/
+// Inputs
+input				CLOCK_50;
+input		[3:0]	KEY;
+input		[9:0]	SW;
+
+input				AUD_ADCDAT;
+
+// Bidirectionals
+inout				AUD_BCLK;
+inout				AUD_ADCLRCK;
+inout				AUD_DACLRCK;
+
+inout				FPGA_I2C_SDAT;
+
+// Outputs
+output				AUD_XCK;
+output				AUD_DACDAT;
+
+output				FPGA_I2C_SCLK;
+output 		[3:0]	finalCountOut;
+output				outEnableTop;
+
+/*****************************************************************************
+ *                 Internal Wires and Registers Declarations                 *
+ *****************************************************************************/
+// Internal Wires
+wire				audio_in_available;
+wire		[31:0]	left_channel_audio_in;
+wire		[31:0]	right_channel_audio_in;
+//wire				read_audio_in;
+
+wire				audio_out_allowed;
+//wire		[31:0]	left_channel_audio_out;
+//wire		[31:0]	right_channel_audio_out;
+//wire				write_audio_out;
+
+// wires I created that are needed for the modules
+
+wire 	[31:0]	pos_audio_in;
+wire 	[3:0]		final_count;
+wire				out_enable;
+
+assign finalCountOut = final_count;
+assign outEnableTop = out_enable;	
+
+// Internal Registers
+
+//reg [18:0] delay_cnt;
+//wire [18:0] delay;
+
+//reg snd;
+
+// State Machine Registers
+
+/*****************************************************************************
+ *                         Finite State Machine(s)                           *
+ *****************************************************************************/
+
+
+/*****************************************************************************
+ *                             Sequential Logic                              *
+ *****************************************************************************/
+
+//always @(posedge CLOCK_50)
+	//if(delay_cnt == delay) begin
+	//	delay_cnt <= 0;
+	//	snd <= !snd;
+	//end else delay_cnt <= delay_cnt + 1;
+
+/*****************************************************************************
+ *                            Combinational Logic                            *
+ *****************************************************************************/
+
+//assign delay = {SW[3:0], 15'd3000};
+
+//wire [31:0] sound = (SW == 0) ? 0 : snd ? 32'd10000000 : -32'd10000000;
+
+
+//assign read_audio_in			= audio_in_available & audio_out_allowed;
+
+//assign left_channel_audio_out	= left_channel_audio_in+sound;
+//assign right_channel_audio_out	= right_channel_audio_in+sound;
+//assign write_audio_out			= audio_in_available & audio_out_allowed;
+
+/*****************************************************************************
+ *                              Internal Modules                             *
+ *****************************************************************************/
+
+Audio_Controller Audio_Controller (
+	// Inputs
+	.CLOCK_50						(CLOCK_50),
+	.reset						(~KEY[0]),
+
+	.clear_audio_in_memory		(),
+	.read_audio_in				(read_audio_in),
+	
+	.clear_audio_out_memory		(),
+	.left_channel_audio_out		(left_channel_audio_out),
+	.right_channel_audio_out	(right_channel_audio_out),
+	.write_audio_out			(write_audio_out),
+
+	.AUD_ADCDAT					(AUD_ADCDAT),
+
+	// Bidirectionals
+	.AUD_BCLK					(AUD_BCLK),
+	.AUD_ADCLRCK				(AUD_ADCLRCK),
+	.AUD_DACLRCK				(AUD_DACLRCK),
+
+
+	// Outputs
+	.audio_in_available			(audio_in_available),
+	.left_channel_audio_in		(left_channel_audio_in),
+	.right_channel_audio_in		(right_channel_audio_in),
+
+	.audio_out_allowed			(audio_out_allowed),
+
+	.AUD_XCK					(AUD_XCK),
+	.AUD_DACDAT					(AUD_DACDAT)
+
+);
+
+avconf #(.USE_MIC_INPUT(1)) avc (
+	.FPGA_I2C_SCLK					(FPGA_I2C_SCLK),
+	.FPGA_I2C_SDAT					(FPGA_I2C_SDAT),
+	.CLOCK_50					(CLOCK_50),
+	.reset						(~KEY[0])
+);
+
+convert M1 (.clock(CLOCK_50),
+				.sample (left_channel_audio_in), 
+				.pos_sample(pos_audio_in)
+);
+
+COUNTS U1 (.sample (pos_audio_in),
+			.clock (CLOCK_50),
+			.reset (SW[9]),
+			.enable (SW[8]),
+			.main_count (final_count),
+			.out_enable (out_enable)
+			);
+	
+
+endmodule
+
+module convert (clock, sample, pos_sample);
+
+	input [31:0] sample;
+	inout clock;
+   output reg [31:0] pos_sample;
+
+      always @ (posedge clock)
+		begin
+         if (sample[31] == 1'b1) 
+			
+				begin
+			
+					pos_sample [31] <= 1'b0;
+
+					pos_sample [30:0] <= (~sample[30:0] + 31'd1);
+
+				end
+
+         else
+
+            pos_sample <= sample;
+
+         end
+
+endmodule
+
+	
+
+module COUNTS (input [31:0] sample, input clock, input reset, input enable, output reg [3:0] main_count, output reg out_enable);
+
+	reg [31:0] cclk; 
+	reg [31:0] c0;
+	reg [31:0] c1; 
+	reg [31:0] c2; 
+	reg [31:0] c3; 
+	reg [31:0] c4; 
+	reg [31:0] c5; 
+	reg [31:0] c6; 
+	reg [31:0] c7; 
+	reg [31:0] c8; 
+	reg [31:0] c9;
+	
+	
+	
+	always @ (posedge clock)
+	begin
+	//dealing with clock counter
+		if (reset == 1'b1)
+			begin
+				cclk <= 32'd25000000;
+				c0 <= 32'd0;
+				c1 <= 32'd0;
+				c2 <= 32'd0;
+				c3 <= 32'd0;
+				c4 <= 32'd0;
+				c5 <= 32'd0;
+				c6 <= 32'd0;
+				c7 <= 32'd0;
+				c8 <= 32'd0;
+				c9 <= 32'd0;
+				out_enable <= 1'b0;
+			end
+			
+		else if (cclk == 32'd0)
+			begin
+				cclk <= 32'd25000000;
+				c0 <= 32'd0;
+				c1 <= 32'd0;
+				c2 <= 32'd0;
+				c3 <= 32'd0;
+				c4 <= 32'd0;
+				c5 <= 32'd0;
+				c6 <= 32'd0;
+				c7 <= 32'd0;
+				c8 <= 32'd0;
+				c9 <= 32'd0;
+				out_enable <= 1'b1;
+				
+				//dealing with assigning output when clock counter reaches 0
+				if (c0 > c1 && c0 > c2 && c0 > c3 && c0 > c4 && c0 > c5 && c0 > c6 && c0 > c7 && c0 > c8 && c0 > c9)
+					main_count <= 4'b0000;
+				else if (c1 > c0 && c1 > c2 && c1 > c3 && c1 > c4 && c1 > c5 && c1 > c6 && c1 > c7 && c1 > c8 && c1 > c9)
+					main_count <= 4'b0001;
+				else if (c2 > c0 && c2 > c1 && c2 > c3 && c2 > c4 && c2 > c5 && c2 > c6 && c2 > c7 && c2 > c8 && c2 > c9)
+					main_count <= 4'b0010;
+				else if (c3 > c0 && c3 > c1 && c3 > c2 && c3 > c4 && c3 > c5 && c3 > c6 && c3 > c7 && c3 > c8 && c3 > c9)
+					main_count <= 4'b0011;
+				else if (c4 > c0 && c4 > c1 && c4 > c2 && c4 > c3 && c4 > c5 && c4 > c6 && c4 > c7 && c4 > c8 && c4 > c9)
+					main_count <= 4'b0100;
+				else if (c5 > c0 && c5 > c1 && c5 > c2 && c5 > c3 && c5 > c4 && c5 > c6 && c5 > c7 && c5 > c8 && c5 > c9)
+					main_count <= 4'b0101;
+				else if (c6 > c0 && c6 > c1 && c6 > c2 && c6 > c3 && c6 > c4 && c6 > c5 && c6 > c7 && c6 > c8 && c6 > c9)
+					main_count <= 4'b0110;
+				else if (c7 > c0 && c7 > c1 && c7 > c2 && c7 > c3 && c7 > c4 && c7 > c5 && c7 > c6 && c7 > c8 && c7 > c9)
+					main_count <= 4'b0111;
+				else if (c8 > c0 && c8 > c1 && c8 > c2 && c8 > c3 && c8 > c4 && c8 > c5 && c8 > c6 && c8 > c7 && c8 > c9)
+					main_count <= 4'b1000;
+				else if (c9 > c0 && c9 > c1 && c9 > c2 && c9 > c3 && c9 > c4 && c9 > c5 && c9 > c6 && c9 > c7 && c9 > c8)
+					main_count <= 4'b1001;
+				
+				
+				
+				
+				
+			end
+			
+		else if (enable == 1'b1)
+			begin
+				cclk <= cclk - 1'd1;
+				out_enable <= 1'b0;
+			
+			
+	//other counters
+	
+			if (sample < 32'd72659)
+			c0 <= c0 + 32'd1;
+			
+			if (sample >= 32'd72659 && sample <= 32'd1192937)
+			c1 <= c1 + 32'd1;
+			
+			if (sample >= 32'd1192937 && sample < 32'd19585804)
+			c2 <= c2 + 32'd1;
+	
+			if (sample >= 32'd19585804 && sample < 32'd321562198)
+			c3 <= c3 + 32'd1;
+			
+			if (sample >= 32'd321562198 && sample < 32'd1302947071)
+			c4 <= c4 + 32'd1;
+		
+			if (sample >= 32'd1302947071 && sample < 32'd5279448512)
+			c5 <= c5 + 32'd1;
+		
+			if (sample >= 32'd5279448512 && sample < 32'd21391948464)
+			c6 <= c6 + 32'd1;
+			
+			if (sample >= 32'd21391948464 && sample < 32'd86678647985)
+			c7 <= c7 + 32'd1;
+			
+			if (sample >= 32'd86678647985 && sample < 32'd351215693563)
+			c8 <= c8 + 32'd1;
+			
+			if (sample > 32'd351215693563)
+			c9 <= c9 + 32'd1;
+			end
+	end
+endmodule

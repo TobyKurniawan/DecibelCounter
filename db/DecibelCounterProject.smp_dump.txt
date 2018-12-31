@@ -1,0 +1,15 @@
+
+State Machine - |DecibelCounterTop|DE1_SoC_Audio_Example:audioData|avconf:avc|mSetup_ST
+Name mSetup_ST.0000 mSetup_ST.0010 mSetup_ST.0001 
+mSetup_ST.0000 0 0 0 
+mSetup_ST.0001 1 0 1 
+mSetup_ST.0010 1 1 0 
+
+State Machine - |DecibelCounterTop|noteControl:controlNoteModule|current_state
+Name current_state.S_PLOT current_state.S_LOADED_COLOUR current_state.S_LOAD_ADDRESS current_state.S_LOAD_NOTE current_state.S_EXTRA_WAIT current_state.S_WAIT 
+current_state.S_WAIT 0 0 0 0 0 0 
+current_state.S_EXTRA_WAIT 0 0 0 0 1 1 
+current_state.S_LOAD_NOTE 0 0 0 1 0 1 
+current_state.S_LOAD_ADDRESS 0 0 1 0 0 1 
+current_state.S_LOADED_COLOUR 0 1 0 0 0 1 
+current_state.S_PLOT 1 0 0 0 0 1 

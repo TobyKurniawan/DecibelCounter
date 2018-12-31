@@ -1,2 +1,4 @@
 # DecibelCounter
-Final project made for ECE241 (Digital Systems). Running on a DE1-SoC board, this application takes an audio input and displays its amplitude in decibels.
+This application takes in an audio input from the mic input on the DE1-SoC board and analyses the bitstream generated from the 
+audio (a PCM file).
+The bitstream analysis determines the amplitude (loudness) of the input in decibels and indicates it on a VGA display.
